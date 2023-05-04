@@ -6,13 +6,26 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <unistd.h>
-//#include <sys/time.h>
+#include <sys/time.h>
+#include <time.h>
 
 
 #define MAX_ARGS 20
 #define BUFFER_SIZE 256
 
+//struct de info para passar para o server
+typedef struct info
+{
+    pid_t pid;
+    char name [300];
+    double tempo;
+    int status;
+}info;
+
+
 int main(int argc, char* argv[]) {
+
+    info i;
 
     if (argc < 3) {
         perror("not enough arguments");
@@ -36,6 +49,9 @@ int main(int argc, char* argv[]) {
         write(server_fd, argv[i], strlen(argv[i]) + 1);
     }
      */
+
+
+
     strcpy(command,argv[1]);
 
     for (int i = 2; i < argc && num_args < MAX_ARGS; i++) {
@@ -49,10 +65,33 @@ int main(int argc, char* argv[]) {
         exit(1);
 
     }else if(pid == 0){
+        //para calcular o tempo antes da realização do programa
+        clock_t begin1 = clock();
+        //para calcular o tempo total
+        clock_t begin2 = clock();
 
 
-        //obter pid do processo filho
+
+        //obter pid do processo filho e por na struct o pid do processo
         pid_t child_pid = getpid();
+        i.pid = child_pid;
+
+        //obter o nome dos programas a fazer para a struct (f=2 pois "execute", "-u") não sei se faz muito sentido help xd
+        for(int f = 2; f < argc; f++){
+            strcat(i.name, argv[f]);
+        }
+
+        //função que vai calcular o tempo de execução antes da realização do programa
+        clock_t end1 = clock();
+        double time_spent1 = (double)(end1 - begin1) / CLOCKS_PER_SEC;
+        i.tempo = time_spent1;
+
+        //Programa em realização
+        i.status = 0;
+
+        
+
+
 
         //abrir pipe para notificar o servidor do novo programa em execução
         int server_fd = open("server_Fifo", O_WRONLY);
@@ -63,10 +102,8 @@ int main(int argc, char* argv[]) {
 
         //falta aqui escrever para o server as informaçoes
         //atraves da estrutura que decidirmos fazer
-        char message[BUFFER_SIZE];
-        snprintf(message, BUFFER_SIZE, "%d %s \n",child_pid,command);
 
-        write(server_fd, message, strlen(message));
+        write(server_fd, &i, sizeof(struct info));
         close(server_fd);
 
         //mais 3 argumentos são "name of file", "execute", "-u"
@@ -75,6 +112,14 @@ int main(int argc, char* argv[]) {
 
         perror("erro ao executar o comando");
         exit(1);
+
+        //tempo total depois de executar o programa
+        clock_t end2 = clock();
+        double time_spent2 = (double)(end2 - begin2) / CLOCKS_PER_SEC;
+
+        //mandar para o server com a info atualizada(tempo e status) nao sei muito bem como fazer mas vou tentar
+
+
     }else{
         //codigo processo pai
 
