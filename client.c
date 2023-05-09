@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <sys/types.h>
-//#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -17,15 +17,13 @@
 typedef struct info
 {
     pid_t pid;
-    char name [300];
+    char name[300];
     double tempo;
     int status;
-}info;
+} info;
 
 
 int main(int argc, char* argv[]) {
-
-    info i;
 
     if (argc < 3) {
         perror("not enough arguments");
@@ -51,13 +49,17 @@ int main(int argc, char* argv[]) {
      */
 
 
-
-    strcpy(command,argv[1]);
+    strcpy(command, argv[1]);
 
     for (int i = 2; i < argc && num_args < MAX_ARGS; i++) {
-        strcpy(args[num_args],argv[i]);
+        strcpy(args[num_args], argv[i]);
         num_args++;
     }
+    info i;
+
+    //calcular o tempo antes da realização do programa
+    clock_t begin1 = clock();
+
     pid_t pid = fork();
 
     if(pid < 0){
@@ -65,20 +67,13 @@ int main(int argc, char* argv[]) {
         exit(1);
 
     }else if(pid == 0){
-        //para calcular o tempo antes da realização do programa
-        clock_t begin1 = clock();
-        //para calcular o tempo total
-        clock_t begin2 = clock();
-
-
-
         //obter pid do processo filho e por na struct o pid do processo
         pid_t child_pid = getpid();
         i.pid = child_pid;
 
         //obter o nome dos programas a fazer para a struct (f=2 pois "execute", "-u") não sei se faz muito sentido help xd
-        for(int f = 2; f < argc; f++){
-            strcat(i.name, argv[f]);
+        for(int f = 1; f < argc; f++){
+            strcat(i.name, args[f]);
         }
 
         //função que vai calcular o tempo de execução antes da realização do programa
@@ -88,9 +83,6 @@ int main(int argc, char* argv[]) {
 
         //Programa em realização
         i.status = 0;
-
-        
-
 
 
         //abrir pipe para notificar o servidor do novo programa em execução
@@ -107,27 +99,46 @@ int main(int argc, char* argv[]) {
         close(server_fd);
 
         //mais 3 argumentos são "name of file", "execute", "-u"
-        execvp("cliente", argv+2);
+        execvp(command, args);
 
 
         perror("erro ao executar o comando");
         exit(1);
 
         //tempo total depois de executar o programa
-        clock_t end2 = clock();
-        double time_spent2 = (double)(end2 - begin2) / CLOCKS_PER_SEC;
+
 
         //mandar para o server com a info atualizada(tempo e status) nao sei muito bem como fazer mas vou tentar
 
 
     }else{
         //codigo processo pai
-
         //espera pelo filho terminar
         int status;
         waitpid(pid,&status,0);
 
-        int server_fd = open("server_Fifo", O_WRONLY);
+        clock_t end2 = clock();
+        double time_spent2 = (double)(end2 - begin1) / CLOCKS_PER_SEC;
+
+        //ler a mensagem do filho
+        int read_fd = open("client_fifo",O_RDONLY);
+        if(read_fd<0){
+            perror("Erro ao abrir FIFO");
+            exit(1);
+        }
+        char buffer[BUFFER_SIZE];
+        int bytes_read = read(read_fd, buffer, BUFFER_SIZE);
+        if(bytes_read < 0){
+            perror("Erro ao ler do FIFO");
+            exit(1);
+        }
+        close(read_fd);
+
+        //mostra a mensagem do filho
+        printf("Resultado: %s\n", buffer);
+
+        //abrir o FIFO do servidor
+        int server_fd = open("server_fifo", O_WRONLY);
         if(server_fd < 0){
             perror("erro ao abrir pipe do servidor");
             exit(1);
@@ -136,9 +147,13 @@ int main(int argc, char* argv[]) {
         //vai ser necessario para transmitir o tempo que passou
         //ao servidor
 
-        char message[BUFFER_SIZE];
+        info i;
+        i.pid = pid;
+        strcpy(i.name, command);
+        i.tempo = -1;
+        i.status = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 
-        write(server_fd, message, strlen(message));
+        write(server_fd, &i, sizeof(info));
         close(server_fd);
     }
     return 0;
