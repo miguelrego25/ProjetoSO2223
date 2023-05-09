@@ -1,6 +1,43 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/time.h>
+
+#define BUFF_SIZE 256
+typedef struct{
+    int pid;
+    char program_name[BUFF_SIZE];
+    struct timeval start_time;
+}ProgramInfo;
+
+int main(){
+    int fd;
+    char buff[BUFF_SIZE];
+    char *prog_info[BUFF_SIZE];
+
+    for (int i = 0; i < BUFF_SIZE; i++) {
+        prog_info[i] = NULL;
+    }
+
+    mkfifo("server_fifo",0666);
+    printf("server walking...\n");
+
+    while(1){
+        fd = open("server_fifo",O_RDONLY);
+        read(fd,buff,BUFF_SIZE);
+
+        //ver o que foi recebido e comparar atraves de if clauses
+        if(strncmp(buff,"execute ",))
+    }
+}
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 //#include <sys/types.h>
 //#include <sys/stat.h>
 #include <sys/wait.h>
