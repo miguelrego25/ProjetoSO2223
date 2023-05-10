@@ -25,26 +25,46 @@ typedef struct infoTable{
     Info* info;
 }infoTable;
 
+int private_pipe;
+
 
 int main(int argc, char* argv[]) {
-    int fileSize= 1;
     char buffer[1024];
     struct Info j;
     struct infoTable i;
 
     //int log;
     //log = open("log.txt", O_CREAT | O_TRUNC | O_WRONLY, 0666);
+    //criar o pipe privado
 
+    //criação do pipe publico
+    char path[30] = "tmp/fifoPublic";
+
+    if(mkfifo(path, 0666) < 0){
+        perror("mkfifo");
+        return 1;
+    }
+    /*
     if (mkfifo("server_fifo", 0600) < 0)
         perror("Erro fifo");
 
     int fifo = open("fifo", O_RDONLY);
     if (fifo < 0) perror("Erro fifo");
+    */
+
+   int public_fifo = open(path,O_WRONLY);
+
+   if(public_fifo < 0){
+    perror("open public fifo");
+   }
 
     while (1) {
         int bytes_read = 0;
         //ler do pipe a informação
-        while ((bytes_read = read(fifo, &i, sizeof(Info)) > 0)) {
+        while ((bytes_read = read(public_fifo, &i, sizeof(Info)) > 0)) {
+
+
+
             if(j.status == 0){
                i.n_info = j.pid;
                i.info->pid = j.pid;
@@ -58,27 +78,14 @@ int main(int argc, char* argv[]) {
             }
             if(j.status == 1){
                 int bytesRead = 0;
-                while(){
-
+                while(/*Não sei como iterar pela struct até ver quais dos elementos estão em processo*/){
+                    if(i.info->processtatus == 1){
+                        write(private_pipe, &j, sizeof(struct infoTable));
+                    }
                 }
-            /*read(, &i, sizeof(i));
 
-            //Armazenar a informação num ficheiro para ler posteriormente
-            FILE* fp = fopen("dados.txt", "w");
-
-            fprintf(fp, "name:%s \ tempo =%f  \ status = %d\n", i.name, i.tempo, i.status);
-
-            //isto não está correto temos que arranjar outra forma(talvez fazer se for status por na struct na mesma mas pôr tudo a NULL e o status a 1 ou alguma coisa parecida)
-            if(strcmp(&i, "status" == 0)){
-
-            }
-
-        }else{
-            close("server_Fifo");
-        }
-            */
-        }
     }
+    close(private_pipe);
     return 0;
 }
 
