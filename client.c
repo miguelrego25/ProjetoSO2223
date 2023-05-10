@@ -17,21 +17,29 @@
 typedef struct info
 {
     pid_t pid;
-    char name[300];
+    char name [300];
     double tempo;
+    int processtatus;
     int status;
-} info;
+}info;
 
 
 int main(int argc, char* argv[]) {
-
-    if (argc < 3) {
+    if (argc < 3 && (strcmp(argv[1],"status") == 0)){
         perror("not enough arguments");
         exit(1);
     }
     char command[BUFFER_SIZE];
     char args[MAX_ARGS][BUFFER_SIZE];
     int num_args = 0;
+    info i;
+
+
+    //falta completar ( abrir um pipe de read para o server, e abrir um de write para receber do server as informçoes)
+    if(argv[1] == "status"){
+        i.status = 1;
+
+    }
 
     /*
     int server_fd = open("server_Fifo", O_WRONLY);
@@ -55,7 +63,6 @@ int main(int argc, char* argv[]) {
         strcpy(args[num_args], argv[i]);
         num_args++;
     }
-    info i;
 
     //calcular o tempo antes da realização do programa
     clock_t begin1 = clock();
@@ -150,9 +157,9 @@ int main(int argc, char* argv[]) {
         info i;
         i.pid = pid;
         strcpy(i.name, command);
-        i.tempo = -1;
-        i.status = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
-
+        i.tempo = time_spent2;
+        i.processtatus = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+        i.status = 0;
         write(server_fd, &i, sizeof(info));
         close(server_fd);
     }
