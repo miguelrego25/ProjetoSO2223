@@ -25,6 +25,29 @@ typedef struct info
 
 
 int main(int argc, char* argv[]) {
+
+    //Cria pipe privado
+    char fifo_privado[10];
+    char path_public[30];
+    char path_privado[30];
+    snsprintf(fifo_privado, "fifo%d", getpid());
+    snsprintf(path_privado, "temp/%s", fifo_privado);
+    snsprintf(path_public, "temp/fifoPublic");
+
+
+    if(mkfifo(path_privado, 0666) < 0){
+        perror("mkfifo");
+        return 1;
+    }
+
+    //abrir o pipe privado logo quando começa o programa
+    int fifo_Public = open(path_public, O_WRONLY);
+
+    if(fifo_Public < 0){
+        perror("Open Public");
+    }
+
+    //sem argmuentos suficientes para fazer alguma coisa
     if (argc < 3 && (strcmp(argv[1],"status") == 0)){
         perror("not enough arguments");
         exit(1);
@@ -38,34 +61,30 @@ int main(int argc, char* argv[]) {
     //falta completar ( abrir um pipe de read para o server, e abrir um de write para receber do server as informçoes)
     if(argv[1] == "status"){
         i.status = 1;
-        int fd = open("server_fifo", O_WRONLY);
-        if (fd == -1) {
-            perror("open");
-            exit(1);
-        }
+
 
         /* Escreve o pedido de status no pipe com nome */
-        write(fd, &i, sizeof(info));
+        write(fifo_Public, &i, sizeof(info));
 
         /* Fecha o pipe com nome */
-        close(fd);
+        close(fifo_Public);
 
         /* Abre o pipe com nome para leitura */
-        fd = open("server_fifo", O_RDONLY);
-        if (fd == -1) {
+        int fifo_private= open(fifo_privado, O_RDONLY);
+        if (fifo_private == -1) {
             perror("open");
             exit(1);
         }
 
         /* Lê a resposta do servidor */
         char buf[BUFFER_SIZE];
-        while (read(fd, buf, BUFFER_SIZE) > 0) {
+        while (read(fifo_privado, buf, BUFFER_SIZE) > 0) {
             /* Processa a resposta do servidor */
             printf("%s\n", buf);
         }
 
         /* Fecha o pipe com nome */
-        close(fd);
+        close(fifo_private);
     }
 
     /*
@@ -118,19 +137,21 @@ int main(int argc, char* argv[]) {
         //Programa em realização
         i.status = 0;
 
-
+        
+        //---------------------------------------------------------------------------
+        //ESTE BOCADO JÁ NÂO É PRECISO PORQUE ABRIMOS O PIPE PUBLICO LOGO NO INICIO DO PROGRAMA
         //abrir pipe para notificar o servidor do novo programa em execução
-        int server_fd = open("server_fifo", O_WRONLY);
-        if(server_fd < 0){
-            perror("erro ao abrir pipe do servidor");
-            exit(1);
-        }
+        //int server_fd = open("server_fifo", O_WRONLY);
+        //if(server_fd < 0){
+        //    perror("erro ao abrir pipe do servidor");
+        //    exit(1);
+        //}
 
         //falta aqui escrever para o server as informaçoes
         //atraves da estrutura que decidirmos fazer
 
-        write(server_fd, &i, sizeof(struct info));
-        close(server_fd);
+        write(fifo_Public, &i, sizeof(struct info));
+        close(fifo_Public);
 
         //mais 3 argumentos são "name of file", "execute", "-u"
         execvp(command, args);
@@ -155,18 +176,25 @@ int main(int argc, char* argv[]) {
         double time_spent2 = (double)(end2 - begin1) / CLOCKS_PER_SEC;
 
         //ler a mensagem do filho
-        int read_fd = open("server_fifo",O_RDONLY);
+        /**int read_fd = open("server_fifo",O_RDONLY);
         if(read_fd<0){
             perror("Erro ao abrir FIFO");
             exit(1);
         }
+
+        **/
+
+        int fifo_private = open(path_privado, O_RDONLY);
+        if(fifo_private < 0){
+            perror("Open Private");
+        }
         char buffer[BUFFER_SIZE];
-        int bytes_read = read(read_fd, buffer, BUFFER_SIZE);
+        int bytes_read = read(fifo_private, buffer, BUFFER_SIZE);
         if(bytes_read < 0){
             perror("Erro ao ler do FIFO");
             exit(1);
         }
-        close(read_fd);
+        close(fifo_private);
 
         //mostra a mensagem do filho
         printf("Resultado: %s\n", buffer);
