@@ -38,7 +38,34 @@ int main(int argc, char* argv[]) {
     //falta completar ( abrir um pipe de read para o server, e abrir um de write para receber do server as informçoes)
     if(argv[1] == "status"){
         i.status = 1;
+        int fd = open("server_fifo", O_WRONLY);
+        if (fd == -1) {
+            perror("open");
+            exit(1);
+        }
 
+        /* Escreve o pedido de status no pipe com nome */
+        write(fd, &i, sizeof(info));
+
+        /* Fecha o pipe com nome */
+        close(fd);
+
+        /* Abre o pipe com nome para leitura */
+        fd = open("server_fifo", O_RDONLY);
+        if (fd == -1) {
+            perror("open");
+            exit(1);
+        }
+
+        /* Lê a resposta do servidor */
+        char buf[BUFFER_SIZE];
+        while (read(fd, buf, BUFFER_SIZE) > 0) {
+            /* Processa a resposta do servidor */
+            printf("%s\n", buf);
+        }
+
+        /* Fecha o pipe com nome */
+        close(fd);
     }
 
     /*
@@ -93,7 +120,7 @@ int main(int argc, char* argv[]) {
 
 
         //abrir pipe para notificar o servidor do novo programa em execução
-        int server_fd = open("server_Fifo", O_WRONLY);
+        int server_fd = open("server_fifo", O_WRONLY);
         if(server_fd < 0){
             perror("erro ao abrir pipe do servidor");
             exit(1);
@@ -128,7 +155,7 @@ int main(int argc, char* argv[]) {
         double time_spent2 = (double)(end2 - begin1) / CLOCKS_PER_SEC;
 
         //ler a mensagem do filho
-        int read_fd = open("client_fifo",O_RDONLY);
+        int read_fd = open("server_fifo",O_RDONLY);
         if(read_fd<0){
             perror("Erro ao abrir FIFO");
             exit(1);

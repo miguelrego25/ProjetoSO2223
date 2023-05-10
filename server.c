@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
     if (mkfifo("server_fifo", 0600) < 0)
         perror("Erro fifo");
 
-    int fifo = open("fifo", O_RDONLY);
+    int fifo = open("server_fifo", O_RDONLY);
     if (fifo < 0) perror("Erro fifo");
 
     while (1) {
