@@ -31,8 +31,8 @@ int main(int argc, char* argv[]) {
     char path_public[30];
     char path_privado[30];
     sprintf(fifo_privado, sizeof(fifo_privado), "fifo%d", getpid());
-    sprintf(path_privado, sizeof(path_privado), "temp/%s", fifo_privado);
-    sprintf(path_public, sizeof(path_public), "temp/fifoPublic");
+    sprintf(path_privado, sizeof(path_privado), "tmp/%s", fifo_privado);
+    sprintf(path_public, sizeof(path_public), "tmp/fifoPublic");
 
 
     if(mkfifo(path_privado, 0666) < 0){
