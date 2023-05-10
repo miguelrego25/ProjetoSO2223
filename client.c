@@ -30,9 +30,9 @@ int main(int argc, char* argv[]) {
     char fifo_privado[10];
     char path_public[30];
     char path_privado[30];
-    snsprintf(fifo_privado, "fifo%d", getpid());
-    snsprintf(path_privado, "temp/%s", fifo_privado);
-    snsprintf(path_public, "temp/fifoPublic");
+    snprintf(fifo_privado, sizeof(fifo_privado), "fifo%d", getpid());
+    snprintf(path_privado, sizeof(path_privado), "temp/%s", fifo_privado);
+    snprintf(path_public, sizeof(path_public), "temp/fifoPublic");
 
 
     if(mkfifo(path_privado, 0666) < 0){
@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
 
         /* Lê a resposta do servidor */
         char buf[BUFFER_SIZE];
-        while (read(fifo_privado, buf, BUFFER_SIZE) > 0) {
+        while (read(fifo_private, buf, BUFFER_SIZE) > 0) {
             /* Processa a resposta do servidor */
             printf("%s\n", buf);
         }
@@ -200,7 +200,7 @@ int main(int argc, char* argv[]) {
         printf("Resultado: %s\n", buffer);
 
         //abrir o FIFO do servidor
-        int server_fd = open("server_fifo", O_WRONLY);
+        int server_fd = open("fifo_private", O_WRONLY);
         if(server_fd < 0){
             perror("erro ao abrir pipe do servidor");
             exit(1);
