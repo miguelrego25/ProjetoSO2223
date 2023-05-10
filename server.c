@@ -10,38 +10,57 @@
 #include <time.h>
 
 
-typedef struct info
+typedef struct Info
 {
     pid_t pid;
     char name [300];
     double tempo;
     int processtatus;
     int status;
-}info;
+}Info;
+
+
+typedef struct infoTable{
+    size_t n_info;
+    Info* info;
+}infoTable;
 
 
 int main(int argc, char* argv[]) {
+    int fileSize= 1;
     char buffer[1024];
-    struct info i;
+    struct Info j;
+    struct infoTable i;
 
-    int log;
-    log = open("log.txt", O_CREAT | O_TRUNC | O_WRONLY, 0666);
+    //int log;
+    //log = open("log.txt", O_CREAT | O_TRUNC | O_WRONLY, 0666);
 
     if (mkfifo("server_fifo", 0600) < 0)
         perror("Erro fifo");
 
-    int fifo = open("server_fifo", O_RDONLY);
+    int fifo = open("fifo", O_RDONLY);
     if (fifo < 0) perror("Erro fifo");
 
     while (1) {
         int bytes_read = 0;
         //ler do pipe a informação
-        while ((bytes_read = read(fifo, &i, sizeof(info)) > 0)) {
-            if(i.status == 1){
+        while ((bytes_read = read(fifo, &i, sizeof(Info)) > 0)) {
+            if(j.status == 0){
+               i.n_info = j.pid;
+               i.info->pid = j.pid;
+               strcpy(i.info->name, j.name);
+               i.info->status = j.status;
+               i.info->processtatus = j.processtatus;
+
+
+
                 //falta criar
             }
-            if()
+            if(j.status == 1){
+                int bytesRead = 0;
+                while(){
 
+                }
             /*read(, &i, sizeof(i));
 
             //Armazenar a informação num ficheiro para ler posteriormente
