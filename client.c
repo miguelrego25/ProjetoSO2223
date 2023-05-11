@@ -30,15 +30,15 @@ int main(int argc, char* argv[]) {
     char fifo_privado[10];
     char path_public[30];
     char path_privado[30];
-    sprintf(fifo_privado, sizeof(fifo_privado), "fifo%d", getpid());
-    sprintf(path_privado, sizeof(path_privado), "tmp/%s", fifo_privado);
-    sprintf(path_public, sizeof(path_public), "tmp/fifoPublic");
+    snprintf(fifo_privado, sizeof(fifo_privado), "fifo%d", getpid());
+    snprintf(path_privado, sizeof(path_privado), "tmp/%s", fifo_privado);
+    snprintf(path_public, sizeof(path_public), "tmp/fifoPublic");
 
-
-    if(mkfifo(path_privado, 0666) < 0){
+    //acho que nao vai ser necessario
+    /*if(mkfifo(path_privado, 0666) < 0){
         perror("mkfifo");
         return 1;
-    }
+    }*/
 
     //abrir o pipe privado logo quando começa o programa
     int fifo_Public = open(path_public, O_WRONLY);
@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
     //falta completar ( abrir um pipe de read para o server, e abrir um de write para receber do server as informçoes)
     if(argv[1] == "status"){
         i.status = 1;
-
+        i.pid = 2;
 
         /* Escreve o pedido de status no pipe com nome */
         write(fifo_Public, &i, sizeof(info));
@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
         close(fifo_Public);
 
         /* Abre o pipe com nome para leitura */
-        int fifo_private= open(fifo_privado, O_RDONLY);
+        int fifo_private= open("2", O_RDONLY);
         if (fifo_private == -1) {
             perror("open");
             exit(1);
@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
 
     strcpy(command, argv[1]);
 
-    for (int i = 2; i < argc && num_args < MAX_ARGS; i++) {
+    for (int i = 3; i < argc && num_args < MAX_ARGS; i++) {
         strcpy(args[num_args], argv[i]);
         num_args++;
     }
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
         //Programa em realização
         i.status = 0;
 
-        
+        /*
         //---------------------------------------------------------------------------
         //ESTE BOCADO JÁ NÂO É PRECISO PORQUE ABRIMOS O PIPE PUBLICO LOGO NO INICIO DO PROGRAMA
         //abrir pipe para notificar o servidor do novo programa em execução
@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) {
         //if(server_fd < 0){
         //    perror("erro ao abrir pipe do servidor");
         //    exit(1);
-        //}
+        //}*/
 
         //falta aqui escrever para o server as informaçoes
         //atraves da estrutura que decidirmos fazer
@@ -159,12 +159,6 @@ int main(int argc, char* argv[]) {
 
         perror("erro ao executar o comando");
         exit(1);
-
-        //tempo total depois de executar o programa
-
-
-        //mandar para o server com a info atualizada(tempo e status) nao sei muito bem como fazer mas vou tentar
-
 
     }else{
         //codigo processo pai
@@ -184,6 +178,10 @@ int main(int argc, char* argv[]) {
 
         **/
 
+
+        /*
+        //nao sei o porque disto// tipo no ha necessidade de ler nada do lado do pai ele apenas precisa
+        //de mandar pra o servidor a dizer que o processo ja terminou
         int fifo_private = open(path_privado, O_RDONLY);
         if(fifo_private < 0){
             perror("Open Private");
@@ -198,17 +196,22 @@ int main(int argc, char* argv[]) {
 
         //mostra a mensagem do filho
         printf("Resultado: %s\n", buffer);
+        //////////////////////////////////////////
+        */
+
+        //é necessario converter o pid de int para char*
+        char pid_string[20];
+        sprintf(pid_string, "%d", pid);
 
         //abrir o FIFO do servidor
-        int server_fd = open("fifo_private", O_WRONLY);
+        int server_fd = open(pid_string, O_WRONLY);
         if(server_fd < 0){
             perror("erro ao abrir pipe do servidor");
             exit(1);
         }
 
-        //vai ser necessario para transmitir o tempo que passou
-        //ao servidor
 
+        //transmissao de update para o servidor
         info i;
         i.pid = pid;
         strcpy(i.name, command);
