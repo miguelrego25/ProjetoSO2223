@@ -210,7 +210,6 @@ int main(int argc, char* argv[]) {
             exit(1);
         }
 
-
         //transmissao de update para o servidor
         Info i;
         i.pid = pid;
