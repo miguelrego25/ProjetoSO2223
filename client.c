@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
     }
     */
 
-    int public_fifo = open("public_pipe", O_RDONLY);
+    int public_fifo = open(path_public, O_RDONLY);
     if(public_fifo < 0 ){
         perror("Open Public");
     }
