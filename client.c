@@ -27,21 +27,7 @@ int main(int argc, char* argv[]) {
     snprintf(path_privado, sizeof(path_privado), "tmp/%s", fifo_privado);
     snprintf(path_public, sizeof(path_public), "tmp/fifoPublic");
 
-    //acho que nao vai ser necessario
-    /*if(mkfifo(path_privado, 0666) < 0){
-        perror("mkfifo");
-        return 1;
-    }*/
 
-
-    /*
-     * //nao gosto muito desta implementaçao é um bocado confusa
-    int fifo_Public = open(path_public, O_WRONLY);
-
-    if(fifo_Public < 0){
-        perror("Open Public");
-    }
-    */
 
     int public_fifo = open(path_public, O_RDONLY);
     if(public_fifo < 0 ){
@@ -53,7 +39,7 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
     char command[BUFFER_SIZE];
-    char args[MAX_ARGS][BUFFER_SIZE];
+    char* args[MAX_ARGS + 1];
     int num_args = 0;
     Info i;
 
@@ -87,32 +73,14 @@ int main(int argc, char* argv[]) {
         close(fifo_private);
     }
 
-    /*
-    int server_fd = open("server_Fifo", O_WRONLY);
-    if (server_fd < 0) {
-        perror("Erro ao abrir FIFO");
-        exit(1);
-    }
-//
-    //passar a informação para o servidor
-    //esta errado tem que se arranjar uma maneira atraves de
-    //uma struct ou as sim
-    for (int i = 1; i < argc; i++) {
-        write(server_fd, argv[i], strlen(argv[i]) + 1);
-    }
-     */
-
-
     strcpy(command, argv[1]);
 
-    for (int i = 3; i < argc && num_args < MAX_ARGS; i++) {
-        strcpy(args[num_args], argv[i]);
+    for (int k = 3; k < argc && num_args < MAX_ARGS; k++) {
+        args[num_args] = strdup(argv[k]);
         num_args++;
     }
+    args[num_args] = NULL;
 
-    //calcular o tempo antes da realização do programa
-    //outra implementaçao de contar o tempo
-    /*clock_t begin1 = clock(); */
     struct timeval begin1, end1;
     gettimeofday(&begin1, NULL);
 
@@ -138,18 +106,6 @@ int main(int argc, char* argv[]) {
         //Programa em realização
         i.status = 0;
 
-        /*
-        //---------------------------------------------------------------------------
-        //ESTE BOCADO JÁ NÂO É PRECISO PORQUE ABRIMOS O PIPE PUBLICO LOGO NO INICIO DO PROGRAMA
-        //abrir pipe para notificar o servidor do novo programa em execução
-        //int server_fd = open("server_fifo", O_WRONLY);
-        //if(server_fd < 0){
-        //    perror("erro ao abrir pipe do servidor");
-        //    exit(1);
-        //}*/
-
-        //falta aqui escrever para o server as informaçoes
-        //atraves da estrutura que decidirmos fazer
 
         write(public_fifo, &i, sizeof(Info));
         close(public_fifo);
@@ -169,35 +125,7 @@ int main(int argc, char* argv[]) {
 
         gettimeofday(&end1, NULL);
         double time_spent2 = (end1.tv_sec - begin1.tv_sec) + (end1.tv_usec - begin1.tv_usec) / 1000000.0;
-        //ler a mensagem do filho
-        /**int read_fd = open("server_fifo",O_RDONLY);
-        if(read_fd<0){
-            perror("Erro ao abrir FIFO");
-            exit(1);
-        }
 
-        **/
-
-
-        /*
-        //nao sei o porque disto// tipo no ha necessidade de ler nada do lado do pai ele apenas precisa
-        //de mandar pra o servidor a dizer que o processo ja terminou
-        int fifo_private = open(path_privado, O_RDONLY);
-        if(fifo_private < 0){
-            perror("Open Private");
-        }
-        char buffer[BUFFER_SIZE];
-        int bytes_read = read(fifo_private, buffer, BUFFER_SIZE);
-        if(bytes_read < 0){
-            perror("Erro ao ler do FIFO");
-            exit(1);
-        }
-        close(fifo_private);
-
-        //mostra a mensagem do filho
-        printf("Resultado: %s\n", buffer);
-        //////////////////////////////////////////
-        */
 
         //é necessario converter o pid de int para char*
         char pid_string[20];
@@ -211,13 +139,13 @@ int main(int argc, char* argv[]) {
         }
 
         //transmissao de update para o servidor
-        Info i;
-        i.pid = pid;
-        strcpy(i.name, command);
-        i.tempofinal = time_spent2;
-        i.processtatus = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
-        i.status = 0;
-        write(server_fd, &i, sizeof(Info));
+        Info info;
+        info.pid = pid;
+        strcpy(info.name, command);
+        info.tempofinal = time_spent2;
+        info.processtatus = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+        info.status = 0;
+        write(server_fd, &info, sizeof(Info));
         close(server_fd);
     }
     return 0;
