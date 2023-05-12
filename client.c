@@ -106,7 +106,6 @@ int main(int argc, char* argv[]) {
         //Programa em realização
         i.status = 0;
 
-
         write(public_fifo, &i, sizeof(Info));
         close(public_fifo);
 
