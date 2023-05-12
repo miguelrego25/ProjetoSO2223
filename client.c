@@ -8,20 +8,13 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <time.h>
+#include "InfoStructArray.h"
 
 
 #define MAX_ARGS 20
 #define BUFFER_SIZE 256
 
 //struct de info para passar para o server
-typedef struct info
-{
-    pid_t pid;
-    char name [300];
-    double tempo;
-    int processtatus;
-    int status;
-}info;
 
 
 int main(int argc, char* argv[]) {
@@ -40,13 +33,20 @@ int main(int argc, char* argv[]) {
         return 1;
     }*/
 
-    //abrir o pipe privado logo quando começa o programa
+
+    /*
+     * //nao gosto muito desta implementaçao é um bocado confusa
     int fifo_Public = open(path_public, O_WRONLY);
 
     if(fifo_Public < 0){
         perror("Open Public");
     }
+    */
 
+    int public_fifo = open("public_pipe", O_RDONLY);
+    if(public_fifo < 0 ){
+        perror("Open Public");
+    }
     //sem argmuentos suficientes para fazer alguma coisa
     if (argc < 3 && (strcmp(argv[1],"status") == 0)){
         perror("not enough arguments");
@@ -55,21 +55,21 @@ int main(int argc, char* argv[]) {
     char command[BUFFER_SIZE];
     char args[MAX_ARGS][BUFFER_SIZE];
     int num_args = 0;
-    info i;
+    Info i;
 
 
-    //falta completar ( abrir um pipe de read para o server, e abrir um de write para receber do server as informçoes)
-    if(argv[1] == "status"){
+    //falta completar (abrir um pipe de read para o server, e abrir um de write para receber do server as informçoes)
+    if(strcmp(argv[1],"status") == 1){
         i.status = 1;
         i.pid = 2;
 
         /* Escreve o pedido de status no pipe com nome */
-        write(fifo_Public, &i, sizeof(info));
+        write(public_fifo, &i, sizeof(Info));
 
         /* Fecha o pipe com nome */
-        close(fifo_Public);
+        close(public_fifo);
 
-        /* Abre o pipe com nome para leitura */
+        /* Abre o pipe com nome para leitura  vamos abrir pipe com pid 2 por simplicidade é pouco provavel que esteja a ser usado*/
         int fifo_private= open("2", O_RDONLY);
         if (fifo_private == -1) {
             perror("open");
@@ -111,7 +111,10 @@ int main(int argc, char* argv[]) {
     }
 
     //calcular o tempo antes da realização do programa
-    clock_t begin1 = clock();
+    //outra implementaçao de contar o tempo
+    /*clock_t begin1 = clock(); */
+    struct timeval begin1, end1;
+    gettimeofday(&begin1, NULL);
 
     pid_t pid = fork();
 
@@ -123,6 +126,7 @@ int main(int argc, char* argv[]) {
         //obter pid do processo filho e por na struct o pid do processo
         pid_t child_pid = getpid();
         i.pid = child_pid;
+        i.tempo =  begin1;
 
         //obter o nome dos programas a fazer para a struct (f=2 pois "execute", "-u") não sei se faz muito sentido help xd
         for(int f = 1; f < argc; f++){
@@ -130,9 +134,6 @@ int main(int argc, char* argv[]) {
         }
 
         //função que vai calcular o tempo de execução antes da realização do programa
-        clock_t end1 = clock();
-        double time_spent1 = (double)(end1 - begin1) / CLOCKS_PER_SEC;
-        i.tempo = time_spent1;
 
         //Programa em realização
         i.status = 0;
@@ -150,8 +151,8 @@ int main(int argc, char* argv[]) {
         //falta aqui escrever para o server as informaçoes
         //atraves da estrutura que decidirmos fazer
 
-        write(fifo_Public, &i, sizeof(struct info));
-        close(fifo_Public);
+        write(public_fifo, &i, sizeof(Info));
+        close(public_fifo);
 
         //mais 3 argumentos são "name of file", "execute", "-u"
         execvp(command, args);
@@ -166,9 +167,8 @@ int main(int argc, char* argv[]) {
         int status;
         waitpid(pid,&status,0);
 
-        clock_t end2 = clock();
-        double time_spent2 = (double)(end2 - begin1) / CLOCKS_PER_SEC;
-
+        gettimeofday(&end1, NULL);
+        double time_spent2 = (end1.tv_sec - begin1.tv_sec) + (end1.tv_usec - begin1.tv_usec) / 1000000.0;
         //ler a mensagem do filho
         /**int read_fd = open("server_fifo",O_RDONLY);
         if(read_fd<0){
@@ -212,13 +212,13 @@ int main(int argc, char* argv[]) {
 
 
         //transmissao de update para o servidor
-        info i;
+        Info i;
         i.pid = pid;
         strcpy(i.name, command);
-        i.tempo = time_spent2;
+        i.tempofinal = time_spent2;
         i.processtatus = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
         i.status = 0;
-        write(server_fd, &i, sizeof(info));
+        write(server_fd, &i, sizeof(Info));
         close(server_fd);
     }
     return 0;
