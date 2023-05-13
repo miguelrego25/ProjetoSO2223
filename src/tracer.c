@@ -18,23 +18,26 @@
 
 
 int main(int argc, char* argv[]) {
-
     //Cria pipe privado
     char fifo_privado[10];
     char path_public[30];
     char path_privado[30];
     snprintf(fifo_privado, sizeof(fifo_privado), "fifo%d", getpid());
     snprintf(path_privado, sizeof(path_privado), "tmp/%s", fifo_privado);
-    snprintf(path_public, sizeof(path_public), "tmp/fifoPublic");
+    snprintf(path_public, sizeof(path_public), "../tmp/fifoPublic");
 
+    if (mkfifo(path_privado, 0666) < 0) {
+        printf(path_privado);
+        perror("mkfifo deu porra");
+        return 1;
+    }
 
-
-    int public_fifo = open(path_public, O_RDONLY);
+    int public_fifo = open(path_public, O_WRONLY);
     if(public_fifo < 0 ){
         perror("Open Public");
     }
     //sem argmuentos suficientes para fazer alguma coisa
-    if (argc < 3 && (strcmp(argv[1],"status") == 0)){
+    if (argc < 3 && (strcmp(argv[1],"status") == 1)){
         perror("not enough arguments");
         exit(1);
     }
@@ -45,7 +48,7 @@ int main(int argc, char* argv[]) {
 
 
     //falta completar (abrir um pipe de read para o server, e abrir um de write para receber do server as informçoes)
-    if(strcmp(argv[1],"status") == 1){
+    if(strcmp(argv[1],"status") == 0){
         i.status = 1;
         i.pid = 2;
 
@@ -73,7 +76,7 @@ int main(int argc, char* argv[]) {
         close(fifo_private);
     }
 
-    strcpy(command, argv[1]);
+    strcpy(command, argv[0]);
 
     for (int k = 3; k < argc && num_args < MAX_ARGS; k++) {
         args[num_args] = strdup(argv[k]);
@@ -91,26 +94,45 @@ int main(int argc, char* argv[]) {
         exit(1);
 
     }else if(pid == 0){
-        //obter pid do processo filho e por na struct o pid do processo
+
+
+
         pid_t child_pid = getpid();
         i.pid = child_pid;
         i.tempo =  begin1;
 
+
+
+
+        //obter pid do processo filho e por na struct o pid do processo
         //obter o nome dos programas a fazer para a struct (f=2 pois "execute", "-u") não sei se faz muito sentido help xd
-        for(int f = 1; f < argc; f++){
-            strcat(i.name, args[f]);
-        }
 
         //função que vai calcular o tempo de execução antes da realização do programa
 
         //Programa em realização
         i.status = 0;
-
+        for (int f = 4; f < argc; f++) {
+            strncat(i.name, argv[f], MAX_ARGS - strlen(i.name) - 1);
+        }
         write(public_fifo, &i, sizeof(Info));
         close(public_fifo);
 
+        ////lixo
+        //char message[] = "Hello, world! filho \n";
+////
+        ////Write to stdout
+        //if (write(1, message, sizeof(message) - 1) < 0) {
+        //    perror("Error writing to stdout");
+        //    return 1;
+        //}
+        ////fim do lixo
+
         //mais 3 argumentos são "name of file", "execute", "-u"
-        execvp(command, args);
+
+        execvp(argv[3], args);
+
+        //char *args[] = {"ls", NULL};
+        //execvp("ls", args);
 
 
         perror("erro ao executar o comando");
@@ -121,7 +143,15 @@ int main(int argc, char* argv[]) {
         //espera pelo filho terminar
         int status;
         waitpid(pid,&status,0);
+        //lixo
+        char message[] = "Hello, world pai !\n ";
 
+        // Write to stdout
+        if (write(1, message, sizeof(message) - 1) < 0) {
+            perror("Error writing to stdout");
+            return 1;
+        }
+        //fim do lixo
         gettimeofday(&end1, NULL);
         double time_spent2 = (end1.tv_sec - begin1.tv_sec) + (end1.tv_usec - begin1.tv_usec) / 1000000.0;
 
@@ -131,7 +161,7 @@ int main(int argc, char* argv[]) {
         sprintf(pid_string, "%d", pid);
 
         //abrir o FIFO do servidor
-        int server_fd = open(pid_string, O_WRONLY);
+        int server_fd = open(path_privado, O_WRONLY);
         if(server_fd < 0){
             perror("erro ao abrir pipe do servidor");
             exit(1);
