@@ -98,16 +98,11 @@ int main(int argc, char* argv[]) {
         perror("[Tracer] Error creating process.");
         exit(1);
 
-    }else if(pid == 0){
-
-
+    } else if(pid == 0) {
 
         pid_t child_pid = getpid();
         i.pid = child_pid;
         i.tempo =  begin1;
-
-
-
 
         //obter pid do processo filho e por na struct o pid do processo
         //obter o nome dos programas a fazer para a struct (f=2 pois "execute", "-u") não sei se faz muito sentido help xd
@@ -121,8 +116,8 @@ int main(int argc, char* argv[]) {
             strncat(i.name, argv[f], sizeof(i.name) - strlen(i.name) - 1);
             strncat(i.name, " ", sizeof(i.name) - strlen(i.name ) -1);
         }
-        i.name[sizeof(i.name) - 1] = '\0';  // Add null-terminating character
-        printf("name-%s", i.name);
+        i.name[sizeof(i.name) - 1] = '\0';
+        printf("PID of executing - %s\n", i.pid);
         write(public_fifo, &i, sizeof(Info));
         close(public_fifo);
 
