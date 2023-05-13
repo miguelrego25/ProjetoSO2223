@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
     char path_public[30];
     char path_privado[30];
     snprintf(fifo_privado, sizeof(fifo_privado), "fifo%d", getpid());
-    snprintf(path_privado, sizeof(path_privado), "tmp/%s", fifo_privado);
+    snprintf(path_privado, sizeof(path_privado), "../tmp/%s", fifo_privado);
     snprintf(path_public, sizeof(path_public), "../tmp/fifoPublic");
 
     if (mkfifo(path_privado, 0666) < 0) {
@@ -59,7 +59,12 @@ int main(int argc, char* argv[]) {
         close(public_fifo);
 
         /* Abre o pipe com nome para leitura  vamos abrir pipe com pid 2 por simplicidade é pouco provavel que esteja a ser usado*/
-        int fifo_private= open("2", O_RDONLY);
+        if (mkfifo("../tmp/fifo2", 0666) < 0) {
+        printf(path_privado);
+        perror("mkfifo deu porra");
+        return 1;
+    }
+        int fifo_private= open("../tmp/fifo2", O_RDONLY);
         if (fifo_private == -1) {
             perror("open");
             exit(1);
