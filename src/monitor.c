@@ -12,74 +12,83 @@
 
 
 int main(int argc, char* argv[]) {
+
     InfoArray infoArray;
     initInfoArray(&infoArray);
 
-    // Criação do pipe publico
+
+
+    //criação do pipe publico
     char path[30] = "../tmp/fifoPublic";
 
     if (mkfifo(path, 0666) < 0) {
-        perror("[Monitor] Error with mkfifo.");
+        perror("mkfifo");
         return 1;
     }
 
     int public_fifo = open(path, O_RDONLY);
 
     if (public_fifo < 0) {
-        perror("[Monitor] Error opening public fifo.");
+        perror("open public fifo");
     }
     int pipefd[2];
-    if(pipe(pipefd) == -1) {
-        perror("[Monitor] Pipe error.");
+    if(pipe(pipefd) == -1){
+        perror("pipe");
         return 1;
     }
 
     while (1) {
         int bytes_read = 0;
         struct Info i;
-        // Ler do pipe a informação
+        //ler do pipe a informação
         while ((bytes_read = read(public_fifo, &i, sizeof(Info)) > 0)) {
             if (i.status == 0) {
                 pid_t pid = fork();
                 if (pid < 0) {
-                    perror("[Monitor] Fork error.");
+                    perror("Erro no fork");
                     exit(1);
                 } else if (pid == 0) {
                     Info childInfo;
-                    // Processo filho
+                    printf("pid-%d\n", i.pid);
+                    printf("Name-%s\n", i.name);
+                    printf("Tempo-%f\n", i.tempo);
+                    printf("processtatus-%d\n", i.processtatus);
+                    printf("status-%d\n", i.status);
+                    //processo filho
                     close(pipefd[0]);
-                    write(pipefd[1], &childInfo, sizeof(Info));
+                    write(pipefd[1], &i, sizeof(Info));
                     close(pipefd[1]);
 
                     char fifo_privado[40];
                     snprintf(fifo_privado, sizeof(fifo_privado), "../tmp/fifo%d", i.pid-1);
                     int private_fifo = open(fifo_privado, O_RDWR);
                     if (private_fifo < 0) {
-                        perror("[Monitor] Error with private fifo.");
+                        perror("erro private fifo ew");
                         exit(1);
                     }
                     Info temp;
                     int bytes_received = read(private_fifo, &temp, sizeof(Info));
                     if (bytes_received < 0) {
-                        perror("[Monitor] Error reading client update.");
+                        perror("erro ao ler o update do cliente");
                         exit(1);
                     }
                     close(private_fifo);
                     close(pipefd[1]);
                     exit(0);
                 } else {
-                    while(1) {
+                    while(1){
                     int bytes_read1;
                     Info receivedInfo;
                     close(pipefd[1]);
-                    if((bytes_read1 = read(pipefd[0], &receivedInfo, sizeof(Info))) > 0) {
+                    if((bytes_read1 = read(pipefd[0], &receivedInfo, sizeof(Info))) > 0){
                         appendInfo(&infoArray, receivedInfo);
-                    } else {
+                        printf("%d\n", receivedInfo.pid);
+                    }else{
                         break;
                     }
                 }
-                    // Processo pai
-                    // Fica livre para ir buscar novos Infos
+                    //processo pai
+                    // fica livre para ir buscar novos Infos
                 }
 
             } else if (i.status == 1) {
@@ -92,6 +101,8 @@ int main(int argc, char* argv[]) {
     }
     return 0;
 }
+
+
 
 
 
