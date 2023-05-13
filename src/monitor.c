@@ -12,6 +12,7 @@
 
 
 int main(int argc, char* argv[]) {
+
     InfoArray infoArray;
     initInfoArray(&infoArray);
 
@@ -30,6 +31,11 @@ int main(int argc, char* argv[]) {
     if (public_fifo < 0) {
         perror("open public fifo");
     }
+    int pipefd[2];
+    if(pipe(pipefd) == -1){
+        perror("pipe");
+        return 1;
+    }
 
     while (1) {
         int bytes_read = 0;
@@ -42,12 +48,15 @@ int main(int argc, char* argv[]) {
                     perror("Erro no fork");
                     exit(1);
                 } else if (pid == 0) {
+                    Info childInfo;
                     //processo filho
-                    appendInfo(&infoArray, i);
-                    printf("%d", i.pid);
+                    close(pipefd[0]);
+                    write(pipefd[1], &childInfo, sizeof(Info));
+                    close(pipefd[1]);
+
                     char fifo_privado[40];
                     snprintf(fifo_privado, sizeof(fifo_privado), "../tmp/fifo%d", i.pid-1);
-                    int private_fifo = open(fifo_privado, O_WRONLY);
+                    int private_fifo = open(fifo_privado, O_RDWR);
                     if (private_fifo < 0) {
                         perror("erro private fifo ew");
                         exit(1);
@@ -59,8 +68,19 @@ int main(int argc, char* argv[]) {
                         exit(1);
                     }
                     close(private_fifo);
+                    close(pipefd[1]);
                     exit(0);
                 } else {
+                    while(1){
+                    int bytes_read1;
+                    Info receivedInfo;
+                    close(pipefd[1]);
+                    if((bytes_read1 = read(pipefd[0], &receivedInfo, sizeof(Info))) > 0){
+                        appendInfo(&infoArray, receivedInfo);
+                    }else{
+                        break;
+                    }
+                }
                     //processo pai
                     // fica livre para ir buscar novos Infos
                 }
@@ -75,4 +95,7 @@ int main(int argc, char* argv[]) {
     }
     return 0;
 }
+
+
+
 
