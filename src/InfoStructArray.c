@@ -6,46 +6,51 @@
 #include <sys/time.h>
 #include "InfoStructArray.h"
 
+/** Inicialização do InfoArray **/
 void initInfoArray(InfoArray* infoArray) {
     infoArray->array = NULL;
     infoArray->size = 0;
     infoArray->capacity = 0;
 }
 
+/** Adicionar nova Info ao Array **/
 void appendInfo(InfoArray* infoArray, Info newInfo) {
     if (infoArray->size >= infoArray->capacity) {
-        // If the capacity is not enough, double the capacity
+        // Se a capacidade for insuficiente, passa ao dobro
         size_t newCapacity = infoArray->capacity == 0 ? 1 : infoArray->capacity * 2;
         infoArray->array = (Info*)realloc(infoArray->array, newCapacity * sizeof(Info));
         infoArray->capacity = newCapacity;
     }
 
-    // Append the newInfo to the array
+    // Append da newInfo no array
     infoArray->array[infoArray->size] = newInfo;
     infoArray->size++;
 }
 
+/** Libertação de memória **/
 void freeInfoArray(InfoArray* infoArray) {
     free(infoArray->array);
     infoArray->array = NULL;
     infoArray->size = 0;
     infoArray->capacity = 0;
 }
+
+/** Apagar Info **/
 void deleteInfo(InfoArray* infoArray, size_t index) {
     if (index >= infoArray->size) {
-        // Invalid index
+        perror("[InfoArray] Invalid index to delete from InfoArray.");
         return;
     }
 
-    // Move elements after the deleted element by one position
+    // Os elementos depois do apagado são movidos uma posição
     for (size_t i = index; i < infoArray->size - 1; i++) {
         infoArray->array[i] = infoArray->array[i + 1];
     }
 
-    // Decrement the size
+    // Decrementar o tamanho
     infoArray->size--;
 
-    // If the size is significantly smaller than the capacity, resize the array
+    // Se o tamanho for significamente mais pequeno que a capacidade, faz-se resize do array
     if (infoArray->size <= infoArray->capacity / 4) {
         size_t newCapacity = infoArray->capacity / 2;
         if (newCapacity < 1) {
@@ -56,11 +61,11 @@ void deleteInfo(InfoArray* infoArray, size_t index) {
     }
 }
 
+/** Print do InfoArray **/
 void printInfoArray(const InfoArray* infoArray) {
     printf("InfoArray:\n");
     printf("  Size: %zu\n", infoArray->size);
     printf("  Capacity: %zu\n", infoArray->capacity);
-
 
     for (size_t i = 0; i < infoArray->size; i++) {
         Info info = infoArray->array[i];
@@ -72,7 +77,7 @@ void printInfoArray(const InfoArray* infoArray) {
         printf("    PID: %d\n", info.pid);
         printf("    Name: %s\n", info.name);
         printf("    Tempo: %f\n", info.tempofinal);
-        printf("    Processtatus: %d\n", info.processtatus);
+        printf("    ProcessStatus: %d\n", info.processtatus);
         printf("    Status: %d\n", info.status);
     }
 }
