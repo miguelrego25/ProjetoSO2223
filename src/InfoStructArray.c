@@ -69,7 +69,7 @@ void printInfoArray(const InfoArray* infoArray) {
         Info info = infoArray->array[i];
         struct timeval end1;
         gettimeofday(&end1, NULL);
-        double time_spent1 = (end1.tv_sec - info.tempo.tv_sec) * 1000000 + (end1.tv_usec - info.tempo.tv_usec);
+        double time_spent1 = (end1.tv_sec - info.tempo.tv_sec) * 1000 + (end1.tv_usec - info.tempo.tv_usec) / 1000;
         info.tempofinal = time_spent1;
         printf("    PID: %d ", info.pid);
         printf("    Name: %s ", info.name);
