@@ -178,6 +178,7 @@ int main(int argc, char* argv[]) {
         info.tempofinal = time_spent2;
         info.processtatus = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
         info.status = 0;
+        printf("Finished in %s ms\n", time_spent2);
         write(server_fd, &info, sizeof(Info));
         close(server_fd);
     }
