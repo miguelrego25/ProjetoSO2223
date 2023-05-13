@@ -63,9 +63,7 @@ void deleteInfo(InfoArray* infoArray, size_t index) {
 
 /** Print do InfoArray **/
 void printInfoArray(const InfoArray* infoArray) {
-    printf("InfoArray:\n");
-    printf("  Size: %zu\n", infoArray->size);
-    printf("  Capacity: %zu\n", infoArray->capacity);
+    printf("Current status:\n");
 
     for (size_t i = 0; i < infoArray->size; i++) {
         Info info = infoArray->array[i];
@@ -73,12 +71,9 @@ void printInfoArray(const InfoArray* infoArray) {
         gettimeofday(&end1, NULL);
         double time_spent1 = (end1.tv_sec - info.tempo.tv_sec) * 1000000 + (end1.tv_usec - info.tempo.tv_usec);
         info.tempofinal = time_spent1;
-        printf("  Info %zu:\n", i);
-        printf("    PID: %d\n", info.pid);
-        printf("    Name: %s\n", info.name);
-        printf("    Tempo: %f\n", info.tempofinal);
-        printf("    ProcessStatus: %d\n", info.processtatus);
-        printf("    Status: %d\n", info.status);
+        printf("    PID: %d ", info.pid);
+        printf("    Name: %s ", info.name);
+        printf("    Time: %f\n", info.tempofinal);
     }
 }
 
