@@ -15,10 +15,10 @@ int main(int argc, char* argv[]) {
     InfoArray infoArray;
     initInfoArray(&infoArray);
 
-    char buffer[1024];
+
 
     //criação do pipe publico
-    char path[30] = "tmp/fifoPublic";
+    char path[30] = "../tmp/fifoPublic";
 
     if (mkfifo(path, 0666) < 0) {
         perror("mkfifo");
@@ -44,11 +44,12 @@ int main(int argc, char* argv[]) {
                 } else if (pid == 0) {
                     //processo filho
                     appendInfo(&infoArray, i);
-                    char fifo_privado[10];
-                    snprintf(fifo_privado, sizeof(fifo_privado), "%d", i.pid);
+                    printf("%d", i.pid);
+                    char fifo_privado[40];
+                    snprintf(fifo_privado, sizeof(fifo_privado), "../tmp/fifo%d", i.pid-1);
                     int private_fifo = open(fifo_privado, O_WRONLY);
                     if (private_fifo < 0) {
-                        perror("erro private fifo");
+                        perror("erro private fifo ew");
                         exit(1);
                     }
                     Info temp;
@@ -69,5 +70,6 @@ int main(int argc, char* argv[]) {
             }
         }
     }
+    return 0;
 }
 
