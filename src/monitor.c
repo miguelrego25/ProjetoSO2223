@@ -66,6 +66,9 @@ int main(int argc, char* argv[]) {
                 }
 
             } else if (i.status == 1) {
+                char fifo_status[40];
+                snprintf(fifo_status, sizeof(fifo_status), "../tmp/fifo2");
+                int priv2_fifo = open (fifo_status, O_WRONLY);
                 printInfoArray(&infoArray);
             }
         }
