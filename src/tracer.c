@@ -55,8 +55,7 @@ int main(int argc, char* argv[]) {
         /* Escreve o pedido de status no pipe com nome */
         write(public_fifo, &i, sizeof(Info));
 
-        /* Fecha o pipe com nome */
-        close(public_fifo);
+
 
         /* Abre o pipe com nome para leitura  vamos abrir pipe com pid 2 por simplicidade é pouco provavel que esteja a ser usado*/
         if (mkfifo("../tmp/fifo2", 0666) < 0) {
@@ -79,6 +78,7 @@ int main(int argc, char* argv[]) {
 
         /* Fecha o pipe com nome */
         close(fifo_private);
+  
     }
 
     strcpy(command, argv[0]);
