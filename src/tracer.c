@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
         //execvp("ls", args);
 
 
-        perror("erro ao executar o comando");
+        perror("[Tracer] Error executing command.");
         exit(1);
 
     } else {
