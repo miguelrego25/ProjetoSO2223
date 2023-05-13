@@ -55,8 +55,6 @@ int main(int argc, char* argv[]) {
         // Escreve o pedido de status no pipe com nome
         write(public_fifo, &i, sizeof(Info));
 
-
-
         // Abre o pipe com nome para leitura, vamos abrir pipe com pid 2 por simplicidade é pouco provavel que esteja a ser usado
         if (mkfifo("../tmp/fifo2", 0666) < 0) {
             printf(path_privado);
@@ -121,23 +119,11 @@ int main(int argc, char* argv[]) {
         write(public_fifo, &i, sizeof(Info));
         close(public_fifo);
 
-        ////lixo
-        //char message[] = "Hello, world! filho \n";
-////
-        ////Write to stdout
-        //if (write(1, message, sizeof(message) - 1) < 0) {
-        //    perror("Error writing to stdout");
-        //    return 1;
-        //}
-        ////fim do lixo
+   
 
         //mais 3 argumentos são "name of file", "execute", "-u"
 
         execvp(argv[3], args);
-
-        //char *args[] = {"ls", NULL};
-        //execvp("ls", args);
-
 
         perror("[Tracer] Error executing command.");
         exit(1);
@@ -147,15 +133,7 @@ int main(int argc, char* argv[]) {
         // Espera pelo filho terminar
         int status;
         waitpid(pid,&status,0);
-        //lixo
-        char message[] = "Hello, world pai !\n ";
-
-        // Write to stdout
-        if (write(1, message, sizeof(message) - 1) < 0) {
-            perror("[Tracer] Error writing to stdout.");
-            return 1;
-        }
-        //fim do lixo
+        
         gettimeofday(&end1, NULL);
         double time_spent2 = (end1.tv_sec - begin1.tv_sec) + (end1.tv_usec - begin1.tv_usec) / 1000000.0;
 
