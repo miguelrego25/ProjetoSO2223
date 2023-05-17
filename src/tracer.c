@@ -55,6 +55,8 @@ int main(int argc, char* argv[]) {
         // Escreve o pedido de status no pipe com nome
         write(public_fifo, &i, sizeof(Info));
 
+
+
         // Abre o pipe com nome para leitura, vamos abrir pipe com pid 2 por simplicidade é pouco provavel que esteja a ser usado
         if (mkfifo("../tmp/fifo2", 0666) < 0) {
             printf(path_privado);
@@ -90,17 +92,25 @@ int main(int argc, char* argv[]) {
     struct timeval begin1, end1;
     gettimeofday(&begin1, NULL);
 
-    pid_t pid = fork();
+    pid_t child_pid = fork();
+    printf("first%d", child_pid);
 
-    if(pid < 0){
+    if(child_pid < 0){
         perror("[Tracer] Error creating process.");
         exit(1);
 
-    } else if(pid == 0) {
+    }else if(child_pid == 0){
+
+
 
         pid_t child_pid = getpid();
-        i.pid = child_pid;
+        printf("%d",child_pid);
+        i.pid = getpid();
+        printf("ola%d\n", i.pid);
         i.tempo =  begin1;
+
+
+
 
         //obter pid do processo filho e por na struct o pid do processo
         //obter o nome dos programas a fazer para a struct (f=2 pois "execute", "-u") não sei se faz muito sentido help xd
@@ -114,16 +124,28 @@ int main(int argc, char* argv[]) {
             strncat(i.name, argv[f], sizeof(i.name) - strlen(i.name) - 1);
             strncat(i.name, " ", sizeof(i.name) - strlen(i.name ) -1);
         }
-        i.name[sizeof(i.name) - 1] = '\0';
-        printf("PID of executing - %s\n", i.pid);
+        i.name[sizeof(i.name) - 1] = '\0';  // Add null-terminating character
+        printf("name-%s", i.name);
         write(public_fifo, &i, sizeof(Info));
         close(public_fifo);
 
-   
+        ////lixo
+        //char message[] = "Hello, world! filho \n";
+////
+        ////Write to stdout
+        //if (write(1, message, sizeof(message) - 1) < 0) {
+        //    perror("Error writing to stdout");
+        //    return 1;
+        //}
+        ////fim do lixo
 
         //mais 3 argumentos são "name of file", "execute", "-u"
 
         execvp(argv[3], args);
+
+        //char *args[] = {"ls", NULL};
+        //execvp("ls", args);
+
 
         perror("[Tracer] Error executing command.");
         exit(1);
@@ -132,15 +154,23 @@ int main(int argc, char* argv[]) {
         // Processo pai
         // Espera pelo filho terminar
         int status;
-        waitpid(pid,&status,0);
-        
+        waitpid(child_pid,&status,0);
+        //lixo
+        char message[] = "Hello, world pai !\n ";
+
+        // Write to stdout
+        if (write(1, message, sizeof(message) - 1) < 0) {
+            perror("[Tracer] Error writing to stdout.");
+            return 1;
+        }
+        //fim do lixo
         gettimeofday(&end1, NULL);
         double time_spent2 = (end1.tv_sec - begin1.tv_sec) + (end1.tv_usec - begin1.tv_usec) / 1000000.0;
 
 
         // É necessario converter o pid de int para char*
         char pid_string[20];
-        sprintf(pid_string, "%d", pid);
+        sprintf(pid_string, "%d", child_pid);
 
         // Abrir o FIFO do servidor
         int server_fd = open(path_privado, O_WRONLY);
@@ -151,19 +181,14 @@ int main(int argc, char* argv[]) {
 
         // Transmissão de update para o servidor
         Info info;
-        info.pid = pid;
+        info.pid = child_pid;
+        printf("%d",info.pid);
         strcpy(info.name, command);
         info.tempofinal = time_spent2;
         info.processtatus = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
         info.status = 0;
         write(server_fd, &info, sizeof(Info));
         close(server_fd);
-        printf("Final Info:\n");
-        printf("PID: %d\n", info.pid);
-        printf("Command: %s\n", info.name);
-        printf("Tempo Final: %f\n", info.tempofinal);
-        printf("Process Status: %d\n", info.processtatus);
-        printf("Status: %d\n", info.status);
     }
     return 0;
 }
