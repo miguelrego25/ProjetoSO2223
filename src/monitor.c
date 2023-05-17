@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
         int bytes_read = 0;
         struct Info i;
         // Ler do pipe a informação
-        while ((bytes_read = read(public_fifo, &i, sizeof(Info)) > 0)) {
+        while ((bytes_read = read(public_fifo, &i, sizeof(Info))) > 0) {
             if (i.status == 0) {
                 pid_t pid = fork();
                 if (pid < 0) {
@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
                     close(pipefd[1]);
 
                     char fifo_privado[40];
-                    snprintf(fifo_privado, sizeof(fifo_privado), "../tmp/fifo%d", i.pid-1);
+                    snprintf(fifo_privado, sizeof(fifo_privado), "../tmp/fifo%d", i.pid);
                     int private_fifo = open(fifo_privado, O_RDWR);
                     if (private_fifo < 0) {
                         perror("[Monitor] Error with private fifo.");
@@ -73,7 +73,6 @@ int main(int argc, char* argv[]) {
                         exit(1);
                     }
                     close(private_fifo);
-                    close(pipefd[1]);
                     exit(0);
                 } else {
                     while(1){
@@ -101,6 +100,10 @@ int main(int argc, char* argv[]) {
     }
     return 0;
 }
+
+
+
+
 
 
 
